@@ -46,7 +46,7 @@ compose.desktop {
         mainClass = "dev.tkuenneth.mousefinder.mousefinder.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "MouseFinder"
+            packageName = "Mouse Finder"
             packageVersion = "1.0.0"
             description = "Highlights the location of the mouse pointer"
             copyright = "2025 Thomas Kuenneth. All rights reserved."
@@ -67,7 +67,7 @@ compose.desktop {
                 iconFile.set(rootProject.file("artwork/MouseFinder.icns"))
             }
             windows {
-                iconFile.set(project.file("artwork/Clip4Moni.ico"))
+                iconFile.set(rootProject.file("artwork/MouseFinder.ico"))
                 menuGroup = "Thomas Kuenneth"
             }
         }
