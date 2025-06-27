@@ -29,15 +29,14 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
+            implementation(libs.jnativeHook)
         }
     }
 }
 
-
 compose.desktop {
     application {
         mainClass = "dev.tkuenneth.mousefinder.mousefinder.MainKt"
-
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "dev.tkuenneth.mousefinder.mousefinder"
