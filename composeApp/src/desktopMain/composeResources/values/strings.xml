@@ -1,4 +1,7 @@
 <resources>
     <string name="app_title">Mouse Finder</string>
+    <string name="menu_abut">About %1$s\u2026</string>
     <string name="exit">Exit</string>
+
+    <string name="homepage">https://github.com/tkuenneth/MouseFinder</string>
 </resources>

@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,13 +34,16 @@ import mousefinder.composeapp.generated.resources.Res
 import mousefinder.composeapp.generated.resources.app_icon
 import mousefinder.composeapp.generated.resources.app_title
 import mousefinder.composeapp.generated.resources.exit
+import mousefinder.composeapp.generated.resources.menu_abut
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import java.awt.MouseInfo
 import java.util.logging.Level
 import java.util.logging.Logger
 
 fun main() = application {
-    var isVisible by remember { mutableStateOf(false) }
+    var mouseSpotVisible by remember { mutableStateOf(false) }
+    var aboutWindowVisible by remember { mutableStateOf(false) }
     DisposableEffect(Unit) {
         var keyListener: GlobalKeyListener? = null
         try {
@@ -48,7 +52,7 @@ fun main() = application {
             logger.useParentHandlers = false
             GlobalScreen.registerNativeHook()
             keyListener = GlobalKeyListener(
-                onShowWindow = { isVisible = true })
+                onShowWindow = { mouseSpotVisible = true })
             GlobalScreen.addNativeKeyListener(keyListener)
         } catch (ex: NativeHookException) {
             println("Failed to register global hotkeys: ${ex.message}")
@@ -63,39 +67,52 @@ fun main() = application {
             }
         }
     }
-    if (isVisible) {
-        App { isVisible = false }
-    }
+    val appTitle = stringResource(Res.string.app_title)
+    val menuAbout = stringResource(
+        Res.string.menu_abut, appTitle
+    )
     Tray(
         icon = painterResource(Res.drawable.app_icon),
-        tooltip = stringResource(Res.string.app_title),
-        onAction = { isVisible = true },
+        tooltip = appTitle,
+        onAction = { mouseSpotVisible = true },
         menu = {
+            Item(
+                text = menuAbout, onClick = { aboutWindowVisible = true })
             Item(
                 stringResource(Res.string.exit), onClick = ::exitApplication
             )
         })
+    MouseSpot(mouseSpotVisible) { mouseSpotVisible = false }
+    AboutWindow(visible = aboutWindowVisible) { aboutWindowVisible = false }
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun App(size: Dp = 200.dp, onCloseRequest: () -> Unit) {
+fun MouseSpot(visible: Boolean, size: Dp = 200.dp, onCloseRequest: () -> Unit) {
     val density = LocalDensity.current
-    val mouseLocation = remember {
-        try {
-            val pointerInfo = java.awt.MouseInfo.getPointerInfo()
-            val location = pointerInfo.location
-            with(density) { DpOffset(location.x.toDp(), location.y.toDp()) }
-        } catch (_: Exception) {
-            DpOffset.Zero
+    val state = rememberWindowState(
+        size = DpSize(width = size, height = size)
+    )
+    LaunchedEffect(visible) {
+        if (visible) {
+            val mouseLocation = try {
+                val location = MouseInfo.getPointerInfo().location
+                with(density) { DpOffset(location.x.toDp(), location.y.toDp()) }
+            } catch (_: Exception) {
+                DpOffset.Zero
+            }
+            state.position = WindowPosition(
+                x = mouseLocation.x - size / 2, y = mouseLocation.y - size / 2
+            )
         }
     }
     Window(
-        onCloseRequest = onCloseRequest, state = rememberWindowState(
-            position = WindowPosition(
-                x = mouseLocation.x - size / 2, y = mouseLocation.y - size / 2
-            ), size = DpSize(width = size, height = size)
-        ), alwaysOnTop = true, undecorated = true, transparent = true
+        visible = visible,
+        onCloseRequest = onCloseRequest,
+        state = state,
+        alwaysOnTop = true,
+        undecorated = true,
+        transparent = true
     ) {
         Box(
             modifier = Modifier.fillMaxSize().background(
