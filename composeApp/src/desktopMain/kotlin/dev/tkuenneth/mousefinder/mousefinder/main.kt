@@ -1,8 +1,28 @@
 package dev.tkuenneth.mousefinder.mousefinder
 
-import androidx.compose.runtime.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
+import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.github.kwhat.jnativehook.GlobalScreen
@@ -57,11 +77,33 @@ fun main() = application {
         })
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun App(onCloseRequest: () -> Unit) {
+fun App(size: Dp = 200.dp, onCloseRequest: () -> Unit) {
+    val density = LocalDensity.current
+    val mouseLocation = remember {
+        try {
+            val pointerInfo = java.awt.MouseInfo.getPointerInfo()
+            val location = pointerInfo.location
+            with(density) { DpOffset(location.x.toDp(), location.y.toDp()) }
+        } catch (_: Exception) {
+            DpOffset.Zero
+        }
+    }
     Window(
-        onCloseRequest = onCloseRequest, title = stringResource(Res.string.app_title), state = rememberWindowState()
-    ) {}
+        onCloseRequest = onCloseRequest, state = rememberWindowState(
+            position = WindowPosition(
+                x = mouseLocation.x - size / 2, y = mouseLocation.y - size / 2
+            ), size = DpSize(width = size, height = size)
+        ), alwaysOnTop = true, undecorated = true, transparent = true
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize().background(
+                color = MaterialTheme.colorScheme.background, shape = CircleShape
+            ).onPointerEvent(PointerEventType.Exit) {
+                onCloseRequest()
+            })
+    }
 }
 
 class GlobalKeyListener(
