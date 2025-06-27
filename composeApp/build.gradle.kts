@@ -34,13 +34,42 @@ kotlin {
     }
 }
 
+
+val macExtraPlistKeys: String
+    get() = """
+        <key>LSUIElement</key>
+        <string>1</string>
+    """.trim()
+
 compose.desktop {
     application {
         mainClass = "dev.tkuenneth.mousefinder.mousefinder.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-            packageName = "dev.tkuenneth.mousefinder.mousefinder"
+            packageName = "MouseFinder"
             packageVersion = "1.0.0"
+            description = "Highlights the location of the mouse pointer"
+            copyright = "2025 Thomas Kuenneth. All rights reserved."
+            vendor = "Thomas Kuenneth"
+            macOS {
+                bundleID = "dev.tkuenneth.mousefinder.mousefinder"
+                signing {
+                    sign.set(true)
+                    identity.set("Thomas Kuenneth")
+                }
+                notarization {
+                    appleID.set("thomas.kuenneth@icloud.com")
+                    password.set("@keychain:NOTARIZATION_PASSWORD")
+                }
+                infoPlist {
+                    extraKeysRawXml = macExtraPlistKeys
+                }
+                iconFile.set(rootProject.file("artwork/MouseFinder.icns"))
+            }
+            windows {
+                iconFile.set(project.file("artwork/Clip4Moni.ico"))
+                menuGroup = "Thomas Kuenneth"
+            }
         }
     }
 }
