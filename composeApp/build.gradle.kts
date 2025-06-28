@@ -1,10 +1,26 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import java.io.FileInputStream
+import java.io.InputStreamReader
 
 plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
+}
+
+val content = with(rootProject.file("composeApp/src/desktopMain/kotlin/dev/tkuenneth/mousefinder/Version.kt")) {
+    if (isFile) {
+        InputStreamReader(FileInputStream(this), Charsets.UTF_8).use { reader ->
+            reader.readText()
+        }
+    } else {
+        error("$absolutePath not found")
+    }
+}
+val humanReadableVersionString = with(content) {
+    val regex = """const val VERSION = "([^"]+)"""".toRegex()
+    regex.find(this)?.groupValues?.get(1)
 }
 
 kotlin {
@@ -43,16 +59,16 @@ val macExtraPlistKeys: String
 
 compose.desktop {
     application {
-        mainClass = "dev.tkuenneth.mousefinder.mousefinder.MainKt"
+        mainClass = "dev.tkuenneth.mousefinder.MainKt"
         nativeDistributions {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "Mouse Finder"
-            packageVersion = "1.0.0"
+            packageVersion = humanReadableVersionString.toString()
             description = "Highlights the location of the mouse pointer"
             copyright = "2025 Thomas Kuenneth. All rights reserved."
             vendor = "Thomas Kuenneth"
             macOS {
-                bundleID = "dev.tkuenneth.mousefinder.mousefinder"
+                bundleID = "dev.tkuenneth.mousefinder"
                 signing {
                     sign.set(true)
                     identity.set("Thomas Kuenneth")

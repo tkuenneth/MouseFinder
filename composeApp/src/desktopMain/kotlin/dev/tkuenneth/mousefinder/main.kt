@@ -1,4 +1,4 @@
-package dev.tkuenneth.mousefinder.mousefinder
+package dev.tkuenneth.mousefinder
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box

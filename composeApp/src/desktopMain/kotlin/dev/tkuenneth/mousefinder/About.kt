@@ -1,4 +1,4 @@
-package dev.tkuenneth.mousefinder.mousefinder
+package dev.tkuenneth.mousefinder
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +24,7 @@ import mousefinder.composeapp.generated.resources.Res
 import mousefinder.composeapp.generated.resources.app_icon
 import mousefinder.composeapp.generated.resources.app_title
 import mousefinder.composeapp.generated.resources.homepage
+import mousefinder.composeapp.generated.resources.made_with_love
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -40,8 +41,13 @@ fun About(modifier: Modifier = Modifier) {
             modifier = Modifier.size(96.dp)
         )
         Text(
-            text = stringResource(Res.string.app_title),
+            text = "${stringResource(Res.string.app_title)} $VERSION",
             modifier = Modifier.padding(vertical = 16.dp),
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
+        Text(
+            text = stringResource(Res.string.made_with_love),
             color = MaterialTheme.colorScheme.onSurface
         )
         val url = stringResource(Res.string.homepage)

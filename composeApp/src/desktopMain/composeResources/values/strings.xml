@@ -3,5 +3,6 @@
     <string name="menu_abut">About %1$s\u2026</string>
     <string name="exit">Exit</string>
 
+    <string name="made_with_love">Made with \u2665 by Thomas K\u00fcnneth</string>
     <string name="homepage">https://github.com/tkuenneth/MouseFinder</string>
 </resources>

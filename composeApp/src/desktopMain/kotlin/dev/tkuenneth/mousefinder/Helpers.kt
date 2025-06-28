@@ -1,4 +1,4 @@
-package dev.tkuenneth.mousefinder.mousefinder
+package dev.tkuenneth.mousefinder
 
 val platformName: String = StringBuilder().also {
     val osName = System.getProperty("os.name") ?: ""
