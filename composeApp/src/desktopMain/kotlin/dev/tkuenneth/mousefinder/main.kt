@@ -14,8 +14,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
@@ -115,11 +116,24 @@ fun MouseSpot(visible: Boolean, size: Dp = 200.dp, onCloseRequest: () -> Unit) {
         transparent = true
     ) {
         Box(
-            modifier = Modifier.fillMaxSize().background(
-                color = MaterialTheme.colorScheme.background, shape = CircleShape
-            ).onPointerEvent(PointerEventType.Exit) {
-                onCloseRequest()
-            })
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    color = MaterialTheme.colorScheme.background,
+                    shape = CircleShape
+                )
+                .pointerInput(PointerEventPass.Main) {
+                    awaitPointerEventScope {
+                        while (true) {
+                            val event = awaitPointerEvent()
+                            when (event.type) {
+                                PointerEventType.Exit, PointerEventType.Press ->
+                                    onCloseRequest()
+                            }
+                        }
+                    }
+                }
+        )
     }
 }
 

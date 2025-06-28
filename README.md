@@ -1,6 +1,6 @@
 ### Welcome to Mouse Finder
 
-The aim of this app is to, well, find your mouse. That is, upon a key press, it will highlight the current location of the mouse pointer.
+The aim of this app is to, well, find your mouse. That is, upon a key press, it will highlight the current location of the mouse pointer. To close the highlighter, just move the mouse pointer outside the circular area or click on it.
 
 To get system-wide keyboard shortcuts, *Mouse Finder* uses [JNativeHook](https://github.com/kwhat/jnativehook).
 
