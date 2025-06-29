@@ -7,12 +7,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -43,8 +41,11 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 fun main() = application {
+    val size = 200.dp
     var mouseSpotVisible by remember { mutableStateOf(false) }
     var aboutWindowVisible by remember { mutableStateOf(false) }
+    var position by remember { mutableStateOf(DpOffset.Zero) }
+    val density = LocalDensity.current
     DisposableEffect(Unit) {
         var keyListener: GlobalKeyListener? = null
         try {
@@ -53,7 +54,15 @@ fun main() = application {
             logger.useParentHandlers = false
             GlobalScreen.registerNativeHook()
             keyListener = GlobalKeyListener(
-                onShowWindow = { mouseSpotVisible = true })
+                onShowWindow = {
+                    position = MouseInfo.getPointerInfo().location?.let {
+                        with(density) {
+                            DpOffset(it.x.toDp() - size / 2, it.y.toDp() - size / 2)
+                        }
+                    } ?: DpOffset.Zero
+                    mouseSpotVisible = true
+                }
+            )
             GlobalScreen.addNativeKeyListener(keyListener)
         } catch (ex: NativeHookException) {
             println("Failed to register global hotkeys: ${ex.message}")
@@ -83,34 +92,20 @@ fun main() = application {
                 stringResource(Res.string.exit), onClick = ::exitApplication
             )
         })
-    MouseSpot(mouseSpotVisible) { mouseSpotVisible = false }
+    if (mouseSpotVisible) {
+        MouseSpot(position = position, size = size) { mouseSpotVisible = false }
+    }
     AboutWindow(visible = aboutWindowVisible) { aboutWindowVisible = false }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun MouseSpot(visible: Boolean, size: Dp = 200.dp, onCloseRequest: () -> Unit) {
-    val density = LocalDensity.current
-    val state = rememberWindowState(
-        size = DpSize(width = size, height = size)
-    )
-    LaunchedEffect(visible) {
-        if (visible) {
-            val mouseLocation = try {
-                val location = MouseInfo.getPointerInfo().location
-                with(density) { DpOffset(location.x.toDp(), location.y.toDp()) }
-            } catch (_: Exception) {
-                DpOffset.Zero
-            }
-            state.position = WindowPosition(
-                x = mouseLocation.x - size / 2, y = mouseLocation.y - size / 2
-            )
-        }
-    }
+fun MouseSpot(position: DpOffset, size: Dp, onCloseRequest: () -> Unit) {
     Window(
-        visible = visible,
         onCloseRequest = onCloseRequest,
-        state = state,
+        state = rememberWindowState(
+            size = DpSize(width = size, height = size),
+            position = WindowPosition(x = position.x, y = position.y),
+        ),
         alwaysOnTop = true,
         undecorated = true,
         transparent = true
