@@ -24,6 +24,9 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 
 fun main() = application {
+    if (operatingSystem == OperatingSystem.Windows) {
+        System.setProperty("skiko.renderApi", "OPENGL")
+    }
     val size = 200.dp
     var mouseSpotVisible by remember { mutableStateOf(false) }
     var aboutWindowVisible by remember { mutableStateOf(false) }
