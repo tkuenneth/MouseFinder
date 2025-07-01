@@ -1,5 +1,7 @@
 package dev.tkuenneth.mousefinder
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -88,9 +90,21 @@ fun Settings(
     allowShortcuts: (Boolean) -> Unit,
     onShortcutChanged: (MouseFinderShortcut) -> Unit,
 ) {
-    var changeButtonVisible by remember { mutableStateOf(true) }
+    var changeButtonVisible by remember(shortcut) { mutableStateOf(true) }
     LaunchedEffect(changeButtonVisible) {
         allowShortcuts(changeButtonVisible)
+    }
+    if (!changeButtonVisible) {
+        DisposableEffect(Unit) {
+            val listener = SettingsKeyListener {
+                onShortcutChanged(it)
+                changeButtonVisible = true
+            }
+            GlobalScreen.addNativeKeyListener(listener)
+            onDispose {
+                GlobalScreen.removeNativeKeyListener(listener)
+            }
+        }
     }
     Column(
         modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surface),
@@ -100,41 +114,40 @@ fun Settings(
         val text = "${NativeKeyEvent.getModifiersText(shortcut.modifiers)}+${
             NativeKeyEvent.getKeyText(shortcut.keyCode)
         }"
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (changeButtonVisible) {
-                Text(
-                    text = stringResource(Res.string.current_shortcut),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Text(
-                    text = text,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Button(onClick = { changeButtonVisible = false }) {
-                    Text(stringResource(Res.string.change))
+        Crossfade(
+            targetState = changeButtonVisible,
+            animationSpec = tween()
+        ) { isVisible ->
+            if (isVisible) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.current_shortcut),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = text,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Button(onClick = { changeButtonVisible = false }) {
+                        Text(stringResource(Res.string.change))
+                    }
                 }
             } else {
-                DisposableEffect(Unit) {
-                    val listener = SettingsKeyListener {
-                        onShortcutChanged(it)
-                        changeButtonVisible = true
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        text = stringResource(Res.string.new_shortcut),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Button(onClick = { changeButtonVisible = true }) {
+                        Text(stringResource(Res.string.cancel))
                     }
-                    GlobalScreen.addNativeKeyListener(listener)
-                    onDispose {
-                        GlobalScreen.removeNativeKeyListener(listener)
-                    }
-                }
-                Text(
-                    text = stringResource(Res.string.new_shortcut),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                Button(onClick = { changeButtonVisible = true }) {
-                    Text(stringResource(Res.string.cancel))
                 }
             }
         }
