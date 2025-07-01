@@ -24,7 +24,7 @@ class GlobalKeyListener(
             NativeKeyEvent.VC_SHIFT -> modifiers = modifiers or NativeKeyEvent.SHIFT_MASK
             NativeKeyEvent.VC_META -> modifiers = modifiers or NativeKeyEvent.META_MASK
             activeShortcut.keyCode -> {
-                if (activeShortcut.modifiers and modifiers == modifiers) {
+                if (activeShortcut.modifiers == modifiers) {
                     onShowWindow()
                 }
             }
