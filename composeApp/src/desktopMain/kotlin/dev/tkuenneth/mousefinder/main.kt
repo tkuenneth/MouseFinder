@@ -77,6 +77,7 @@ fun main() = application {
         },
         onCloseRequest = {
             settingsVisible = false
+            allowShortcuts = true
         }
     )
 }

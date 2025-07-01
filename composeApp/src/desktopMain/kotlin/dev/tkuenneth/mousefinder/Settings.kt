@@ -10,7 +10,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -24,6 +23,7 @@ import androidx.compose.ui.window.rememberDialogState
 import com.github.kwhat.jnativehook.GlobalScreen
 import com.github.kwhat.jnativehook.keyboard.NativeKeyEvent
 import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
+import kotlinx.coroutines.awaitCancellation
 import mousefinder.composeapp.generated.resources.Res
 import mousefinder.composeapp.generated.resources.app_icon
 import mousefinder.composeapp.generated.resources.app_title
@@ -93,15 +93,15 @@ fun Settings(
     var changeButtonVisible by remember(shortcut) { mutableStateOf(true) }
     LaunchedEffect(changeButtonVisible) {
         allowShortcuts(changeButtonVisible)
-    }
-    if (!changeButtonVisible) {
-        DisposableEffect(Unit) {
+        if (!changeButtonVisible) {
             val listener = SettingsKeyListener {
                 onShortcutChanged(it)
                 changeButtonVisible = true
             }
             GlobalScreen.addNativeKeyListener(listener)
-            onDispose {
+            try {
+                awaitCancellation()
+            } finally {
                 GlobalScreen.removeNativeKeyListener(listener)
             }
         }
@@ -120,6 +120,8 @@ fun Settings(
         ) { isVisible ->
             if (isVisible) {
                 Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
@@ -138,6 +140,8 @@ fun Settings(
                 }
             } else {
                 Column(
+                    modifier = Modifier.fillMaxSize(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
