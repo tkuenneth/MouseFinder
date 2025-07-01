@@ -86,6 +86,10 @@ compose.desktop {
                 iconFile.set(rootProject.file("artwork/MouseFinder.ico"))
                 menuGroup = "Thomas Kuenneth"
             }
+            modules("java.instrument", "java.prefs", "jdk.unsupported")
+        }
+        buildTypes.release.proguard {
+            configurationFiles.from("rules.pro")
         }
     }
 }
