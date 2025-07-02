@@ -29,6 +29,7 @@ import java.awt.MouseInfo
 fun main() = application {
     if (operatingSystem == OperatingSystem.Windows) {
         System.setProperty("skiko.renderApi", "OPENGL")
+        System.setProperty("jnativehook.lib.path", System.getProperty("java.io.tmpdir"))
     }
     val size = 200.dp
     var mouseSpotVisible by remember { mutableStateOf(false) }
