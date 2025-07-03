@@ -1,7 +1,7 @@
 <resources>
     <string name="app_title">Mouse Finder</string>
-    <string name="menu_abut">About %1$s\u2026</string>
-    <string name="menu_settings">Settings\u2026</string>
+    <string name="menu_abut">About %1$s</string>
+    <string name="menu_settings">Settings</string>
     <string name="exit">Exit</string>
 
     <string name="made_with_love">Made with \u2665 by Thomas K\u00fcnneth</string>
