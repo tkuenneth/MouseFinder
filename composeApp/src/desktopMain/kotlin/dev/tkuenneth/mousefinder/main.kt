@@ -40,8 +40,8 @@ fun main() = application {
                         val scaleY = transform.scaleY.toFloat()
                         with(density) {
                             DpOffset(
-                                (it.x / scaleX).toDp() - size / 2,
-                                (it.y / scaleY).toDp() - size / 2
+                                (it.x * scaleX).toDp() - size / 2,
+                                (it.y * scaleY).toDp() - size / 2
                             )
                         }
                     } ?: DpOffset.Zero
