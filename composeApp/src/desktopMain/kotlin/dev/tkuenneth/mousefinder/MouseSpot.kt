@@ -4,12 +4,16 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.DpSize
@@ -17,11 +21,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
+import java.awt.Rectangle
+import java.awt.Robot
 
+private val robot by lazy { Robot() }
 
 @Composable
 fun MouseSpot(visible: Boolean, position: DpOffset, size: Dp, onCloseRequest: () -> Unit) {
     if (visible) {
+        val density = LocalDensity.current
+        val screenshot = remember(position, size, density) {
+            captureScreenshot(position, size, density)
+        }
+        
         Window(
             onCloseRequest = onCloseRequest,
             state = rememberWindowState(
@@ -32,7 +44,6 @@ fun MouseSpot(visible: Boolean, position: DpOffset, size: Dp, onCloseRequest: ()
             undecorated = true,
             transparent = true
         ) {
-            val density = LocalDensity.current
             val rectangleColor = MaterialTheme.colorScheme.onBackground
             val backgroundColor = MaterialTheme.colorScheme.background
 
@@ -50,6 +61,13 @@ fun MouseSpot(visible: Boolean, position: DpOffset, size: Dp, onCloseRequest: ()
                         }
                     }
             ) {
+                screenshot?.let { bitmap ->
+                    drawImage(
+                        image = bitmap,
+                        topLeft = Offset.Zero
+                    )
+                }
+                
                 val centerX = this.size.width / 2
                 val centerY = this.size.height / 2
                 val center = Offset(centerX, centerY)
@@ -99,5 +117,19 @@ fun MouseSpot(visible: Boolean, position: DpOffset, size: Dp, onCloseRequest: ()
                 )
             }
         }
+    }
+}
+
+private fun captureScreenshot(position: DpOffset, size: Dp, density: Density): ImageBitmap? {
+    return try {
+        val pixelX = with(density) { position.x.toPx() }.toInt()
+        val pixelY = with(density) { position.y.toPx() }.toInt()
+        val pixelSize = with(density) { size.toPx() }.toInt()
+        val rectangle = Rectangle(pixelX, pixelY, pixelSize, pixelSize)
+        val bufferedImage = robot.createScreenCapture(rectangle)
+        bufferedImage.toComposeImageBitmap()
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
     }
 }
