@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
+import java.awt.GraphicsEnvironment
 import java.awt.MouseInfo
 
 fun main() = application {
@@ -25,16 +26,25 @@ fun main() = application {
     var allowShortcuts by remember { mutableStateOf(true) }
     var keyListener: GlobalKeyListener? by remember { mutableStateOf(null) }
     val density = LocalDensity.current
+
     DisposableEffect(Unit) {
         keyListener = GlobalKeyListener(
             initialShortcut = shortcut,
             onShowWindow = {
                 if (allowShortcuts) {
-                    position = (MouseInfo.getPointerInfo().location?.let {
+                    position = MouseInfo.getPointerInfo().location?.let {
+                        val graphicsConfig = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                            .defaultScreenDevice.defaultConfiguration
+                        val transform = graphicsConfig.defaultTransform
+                        val scaleX = transform.scaleX.toFloat()
+                        val scaleY = transform.scaleY.toFloat()
                         with(density) {
-                            DpOffset(it.x.toDp() - size / 2, it.y.toDp() - size / 2)
+                            DpOffset(
+                                (it.x / scaleX).toDp() - size / 2,
+                                (it.y / scaleY).toDp() - size / 2
+                            )
                         }
-                    } ?: DpOffset.Zero)
+                    } ?: DpOffset.Zero
                     mouseSpotVisible = true
                 }
             }).also { it.register() }
