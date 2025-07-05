@@ -1,0 +1,104 @@
+name: Create release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  create-windows-installer:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout project sources
+        uses: actions/checkout@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: 17
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Run packageReleaseMsi with Gradle Wrapper
+        run: ./gradlew packageReleaseMsi
+      - run: Compress-Archive -Path ./composeApp/build/compose/binaries/main-release/msi/*.msi -Destination ./mousefinder_windows.zip
+      - name: Upload asset
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./mousefinder_windows.zip
+          name: mousefinder_windows.zip
+
+  create-macos-installer:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout project sources
+        uses: actions/checkout@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: 17
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Setup keychain, certificates and passwords
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          echo $MACOS_CERTIFICATE | base64 --decode > certificate.p12
+          security create-keychain -p ${{ secrets.KEYCHAIN_PASSWORD }} build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p ${{ secrets.KEYCHAIN_PASSWORD }} build.keychain
+          security import certificate.p12 -k build.keychain -P $MACOS_CERTIFICATE_PASSWORD -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k ${{ secrets.KEYCHAIN_PASSWORD }} build.keychain
+      - name: Run createReleaseDistributable with Gradle Wrapper
+        run: ./gradlew createReleaseDistributable
+      - name: "Notarize app bundle"
+        env:
+          PROD_MACOS_NOTARIZATION_APPLE_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_APPLE_ID }}
+          PROD_MACOS_NOTARIZATION_TEAM_ID: ${{ secrets.PROD_MACOS_NOTARIZATION_TEAM_ID }}
+          PROD_MACOS_NOTARIZATION_PWD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
+        run: |
+          security unlock-keychain -p ${{ secrets.KEYCHAIN_PASSWORD }} build.keychain
+          PATH_TO_APP=/Users/runner/work/mousefinder/mousefinder/composeApp/build/compose/binaries/main-release/app/Mouse\ Finder.app
+          echo "Create keychain profile"
+          xcrun notarytool store-credentials "notarytool-profile" --apple-id "$PROD_MACOS_NOTARIZATION_APPLE_ID" --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" --password "$PROD_MACOS_NOTARIZATION_PWD"
+          echo "Creating temp notarization archive"
+          ditto -c -k --keepParent "$PATH_TO_APP" "notarization.zip"
+          echo "Notarize app"
+          xcrun notarytool submit "notarization.zip" --keychain-profile "notarytool-profile" --wait
+          echo "Attach staple"
+          xcrun stapler staple "$PATH_TO_APP"
+          echo "Create .dmg"
+          mkdir dmg
+          cp -R "$PATH_TO_APP" dmg
+          cd dmg
+          ln -s /Applications/ Applications
+          cd ..
+          hdiutil create -volname Mouse\ Finder -srcfolder dmg -ov -format UDZO Mouse\ Finder.dmg
+          ditto -c -k Mouse\ Finder.dmg /Users/runner/work/mousefinder/mousefinder/mousefinder_macos.zip
+          echo `pwd`
+      - name: Upload asset
+        uses: actions/upload-artifact@v4
+        with:
+          path: /Users/runner/work/mousefinder/mousefinder/mousefinder_macos.zip
+          name: mousefinder_macos.zip
+
+  create-release:
+    runs-on: macos-latest
+    needs: [ create-windows-installer,  create-macos-installer]
+    steps:
+      - name: Download dmg
+        uses: actions/download-artifact@v4
+        with:
+          name: mousefinder_macos.zip
+      - name: Download msi
+        uses: actions/download-artifact@v4
+        with:
+          name: mousefinder_windows.zip
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: "mousefinder_windows.zip,mousefinder_macos.zip"
