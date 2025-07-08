@@ -62,7 +62,7 @@ jobs:
           PROD_MACOS_NOTARIZATION_PWD: ${{ secrets.PROD_MACOS_NOTARIZATION_PWD }}
         run: |
           security unlock-keychain -p ${{ secrets.KEYCHAIN_PASSWORD }} build.keychain
-          PATH_TO_APP=/Users/runner/work/mousefinder/mousefinder/composeApp/build/compose/binaries/main-release/app/Mouse\ Finder.app
+          PATH_TO_APP=./composeApp/build/compose/binaries/main-release/app/Mouse\ Finder.app
           echo "Create keychain profile"
           xcrun notarytool store-credentials "notarytool-profile" --apple-id "$PROD_MACOS_NOTARIZATION_APPLE_ID" --team-id "$PROD_MACOS_NOTARIZATION_TEAM_ID" --password "$PROD_MACOS_NOTARIZATION_PWD"
           echo "Creating temp notarization archive"
@@ -78,12 +78,12 @@ jobs:
           ln -s /Applications/ Applications
           cd ..
           hdiutil create -volname Mouse\ Finder -srcfolder dmg -ov -format UDZO Mouse\ Finder.dmg
-          ditto -c -k Mouse\ Finder.dmg /Users/runner/work/mousefinder/mousefinder/mousefinder_macos.zip
+          ditto -c -k Mouse\ Finder.dmg ./mousefinder_macos.zip
           echo `pwd`
       - name: Upload asset
         uses: actions/upload-artifact@v4
         with:
-          path: /Users/runner/work/mousefinder/mousefinder/mousefinder_macos.zip
+          path: ./mousefinder_macos.zip
           name: mousefinder_macos.zip
 
   create-release:
