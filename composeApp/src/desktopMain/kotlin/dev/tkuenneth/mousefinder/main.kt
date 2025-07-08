@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.application
+import dev.tkuenneth.mousefinder.MacHelp.activateApp
 import java.awt.GraphicsEnvironment
 import java.awt.MouseInfo
 
@@ -53,8 +54,14 @@ fun main() = application {
         }
     }
     MouseFinderTray(
-        settingsClicked = { settingsVisible = true },
-        aboutClicked = { aboutWindowVisible = true }
+        settingsClicked = {
+            settingsVisible = true
+            activateMe()
+        },
+        aboutClicked = {
+            aboutWindowVisible = true
+            activateMe()
+        }
     )
     MouseSpot(
         visible = mouseSpotVisible,
@@ -76,4 +83,10 @@ fun main() = application {
             allowShortcuts = true
         }
     )
+}
+
+private fun activateMe() {
+    if (operatingSystem == OperatingSystem.MacOS) {
+        activateApp("Mouse Finder")
+    }
 }
