@@ -5,14 +5,15 @@
   public protected *;
 }
 
+-keep class com.github.kwhat.jnativehook.GlobalScreen {
+    <init>();
+}
 -keep class com.github.kwhat.jnativehook.** { *; }
 
 -dontwarn kotlinx.coroutines.debug.*
 
 -keep class kotlin.** { *; }
 -keep class kotlinx.** { *; }
--keep class kotlinx.coroutines.** { *; }
--keep class kotlinx.serialization.** { *; }
 -keep class org.jetbrains.skia.** { *; }
 -keep class org.jetbrains.skiko.** { *; }
 
@@ -43,7 +44,7 @@
 # @Serializable and @Polymorphic are used at runtime for polymorphic serialization.
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
 
--keepattributes *Annotation*, InnerClasses
+-keepattributes Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod
 -dontnote kotlinx.serialization.AnnotationsKt # core serialization annotations
 -dontnote kotlinx.serialization.SerializationKt
 
@@ -77,5 +78,4 @@
 -dontwarn javax.naming.**
 
 # Ignore warnings and Don't obfuscate for now
--dontobfuscate
 -ignorewarnings

@@ -90,6 +90,8 @@ jobs:
     runs-on: macos-latest
     needs: [ create-windows-installer,  create-macos-installer]
     steps:
+      - name: Checkout project sources
+        uses: actions/checkout@v3
       - name: Download dmg
         uses: actions/download-artifact@v4
         with:
@@ -102,3 +104,4 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifacts: "mousefinder_windows.zip,mousefinder_macos.zip"
+          bodyFile: "whatsnew.md"

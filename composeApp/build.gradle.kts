@@ -89,7 +89,10 @@ compose.desktop {
             modules("java.instrument", "java.prefs", "jdk.unsupported")
         }
         buildTypes.release.proguard {
-            configurationFiles.from("rules.pro")
+            configurationFiles.from("proguard-desktop.pro")
+            optimize.set(true)
+            obfuscate.set(true)
+            version.set("7.4.0")
         }
     }
 }

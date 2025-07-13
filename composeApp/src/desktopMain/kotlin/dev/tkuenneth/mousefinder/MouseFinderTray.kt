@@ -26,6 +26,7 @@ fun ApplicationScope.MouseFinderTray(settingsClicked: () -> Unit, aboutClicked: 
             Item(
                 text = menuAbout, onClick = aboutClicked
             )
+            Separator()
             Item(
                 stringResource(Res.string.exit), onClick = ::exitApplication
             )
