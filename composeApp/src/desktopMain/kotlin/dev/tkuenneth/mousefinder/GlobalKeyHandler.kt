@@ -8,13 +8,20 @@ import java.util.logging.Level
 import java.util.logging.Logger
 
 class GlobalKeyListener(
-    initialShortcut: MouseFinderShortcut, private val onShowWindow: () -> Unit
+    initialShortcutMouseFinder: MouseFinderShortcut,
+    private val onMouseFinderActivated: () -> Unit,
+    initialShortcutMouseJump: MouseFinderShortcut,
+    private val onMouseJumpActivated: () -> Unit
 ) : NativeKeyListener {
-    private var activeShortcut = initialShortcut
+    private var activeShortcutMouseFinder = initialShortcutMouseFinder
+    private var activeShortcutMouseJump = initialShortcutMouseJump
     private var modifiers = 0
 
-    fun updateShortcut(shortcut: MouseFinderShortcut) {
-        activeShortcut = shortcut
+    fun updateShortcut(shortcut: MouseFinderShortcut, type: MouseFinderShortcutType) {
+        when (type) {
+            MouseFinderShortcutType.MouseFinder -> activeShortcutMouseFinder = shortcut
+            MouseFinderShortcutType.MouseJump -> activeShortcutMouseJump = shortcut
+        }
     }
 
     override fun nativeKeyPressed(e: NativeKeyEvent) {
@@ -23,9 +30,15 @@ class GlobalKeyListener(
             NativeKeyEvent.VC_ALT -> modifiers = modifiers or NativeKeyEvent.ALT_MASK
             NativeKeyEvent.VC_SHIFT -> modifiers = modifiers or NativeKeyEvent.SHIFT_MASK
             NativeKeyEvent.VC_META -> modifiers = modifiers or NativeKeyEvent.META_MASK
-            activeShortcut.keyCode -> {
-                if (activeShortcut.modifiers == modifiers) {
-                    onShowWindow()
+            activeShortcutMouseFinder.keyCode -> {
+                if (activeShortcutMouseFinder.modifiers == modifiers) {
+                    onMouseFinderActivated()
+                }
+            }
+
+            activeShortcutMouseJump.keyCode -> {
+                if (activeShortcutMouseJump.modifiers == modifiers) {
+                    onMouseJumpActivated()
                 }
             }
         }

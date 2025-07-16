@@ -1,1 +1,1 @@
-- Initial release
+- Added a shortcut to activate mouse jump

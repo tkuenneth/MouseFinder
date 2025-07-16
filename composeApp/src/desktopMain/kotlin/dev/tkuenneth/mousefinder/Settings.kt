@@ -4,11 +4,13 @@ import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -26,28 +28,36 @@ import com.github.kwhat.jnativehook.keyboard.NativeKeyListener
 import kotlinx.coroutines.awaitCancellation
 import mousefinder.composeapp.generated.resources.Res
 import mousefinder.composeapp.generated.resources.app_icon
-import mousefinder.composeapp.generated.resources.app_title
 import mousefinder.composeapp.generated.resources.cancel
-import mousefinder.composeapp.generated.resources.change
-import mousefinder.composeapp.generated.resources.current_shortcut
+import mousefinder.composeapp.generated.resources.app_title
+import mousefinder.composeapp.generated.resources.menu_settings
+import mousefinder.composeapp.generated.resources.mouse_jump
 import mousefinder.composeapp.generated.resources.new_shortcut
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import java.util.prefs.Preferences
 
-private const val PREF_KEY_MODIFIERS = "modifiers"
-private const val PREF_KEY_KEYCODE = "keyCode"
+private const val PREF_KEY_MOUSE_FINDER_MODIFIERS = "modifiers"
+private const val PREF_KEY_MOUSE_FINDER_KEYCODE = "keyCode"
+
+private const val PREF_KEY_MOUSE_JUMP_MODIFIERS = "modifiersMouseJump"
+private const val PREF_KEY_MOUSE_JUMP_KEYCODE = "keyCodeMouseJump"
 
 data class MouseFinderShortcut(
     val modifiers: Int,
     val keyCode: Int
 )
 
+enum class MouseFinderShortcutType {
+    MouseFinder,
+    MouseJump
+}
+
 private val prefs = Preferences.userNodeForPackage(MouseFinderShortcut::class.java)
 
 fun getMouseFinderShortcut(): MouseFinderShortcut {
-    val modifiers = prefs.getInt(PREF_KEY_MODIFIERS, NativeKeyEvent.ALT_MASK or NativeKeyEvent.CTRL_MASK)
-    val keyCode = prefs.getInt(PREF_KEY_KEYCODE, NativeKeyEvent.VC_M)
+    val modifiers = prefs.getInt(PREF_KEY_MOUSE_FINDER_MODIFIERS, NativeKeyEvent.ALT_MASK or NativeKeyEvent.CTRL_MASK)
+    val keyCode = prefs.getInt(PREF_KEY_MOUSE_FINDER_KEYCODE, NativeKeyEvent.VC_M)
     return MouseFinderShortcut(
         modifiers = modifiers,
         keyCode = keyCode
@@ -55,16 +65,31 @@ fun getMouseFinderShortcut(): MouseFinderShortcut {
 }
 
 fun putMouseFinderShortcut(shortcut: MouseFinderShortcut) {
-    prefs.putInt(PREF_KEY_MODIFIERS, shortcut.modifiers)
-    prefs.putInt(PREF_KEY_KEYCODE, shortcut.keyCode)
+    prefs.putInt(PREF_KEY_MOUSE_FINDER_MODIFIERS, shortcut.modifiers)
+    prefs.putInt(PREF_KEY_MOUSE_FINDER_KEYCODE, shortcut.keyCode)
+}
+
+fun getMouseJumpShortcut(): MouseFinderShortcut {
+    val modifiers = prefs.getInt(PREF_KEY_MOUSE_JUMP_MODIFIERS, NativeKeyEvent.ALT_MASK or NativeKeyEvent.CTRL_MASK)
+    val keyCode = prefs.getInt(PREF_KEY_MOUSE_JUMP_KEYCODE, NativeKeyEvent.VC_W)
+    return MouseFinderShortcut(
+        modifiers = modifiers,
+        keyCode = keyCode
+    )
+}
+
+fun putMouseJumpShortcut(shortcut: MouseFinderShortcut) {
+    prefs.putInt(PREF_KEY_MOUSE_JUMP_MODIFIERS, shortcut.modifiers)
+    prefs.putInt(PREF_KEY_MOUSE_JUMP_KEYCODE, shortcut.keyCode)
 }
 
 @Composable
 fun SettingsWindow(
     visible: Boolean,
-    shortcut: MouseFinderShortcut,
+    shortcutMouseFinder: MouseFinderShortcut,
+    shortcutMouseJump: MouseFinderShortcut,
     allowShortcuts: (Boolean) -> Unit,
-    onShortcutChanged: (MouseFinderShortcut) -> Unit,
+    onShortcutChanged: (MouseFinderShortcut, MouseFinderShortcutType) -> Unit,
     onCloseRequest: () -> Unit
 ) {
     if (visible) {
@@ -73,10 +98,11 @@ fun SettingsWindow(
             onCloseRequest = onCloseRequest,
             icon = painterResource(Res.drawable.app_icon),
             resizable = false,
-            title = stringResource(Res.string.app_title),
+            title = stringResource(Res.string.menu_settings),
         ) {
             Settings(
-                shortcut = shortcut,
+                shortcutMouseFinder = shortcutMouseFinder,
+                shortcutMouseJump = shortcutMouseJump,
                 allowShortcuts = allowShortcuts,
                 onShortcutChanged = onShortcutChanged
             )
@@ -86,17 +112,21 @@ fun SettingsWindow(
 
 @Composable
 fun Settings(
-    shortcut: MouseFinderShortcut,
+    shortcutMouseFinder: MouseFinderShortcut,
+    shortcutMouseJump: MouseFinderShortcut,
     allowShortcuts: (Boolean) -> Unit,
-    onShortcutChanged: (MouseFinderShortcut) -> Unit,
+    onShortcutChanged: (MouseFinderShortcut, MouseFinderShortcutType) -> Unit,
 ) {
-    var changeButtonVisible by remember(shortcut) { mutableStateOf(true) }
-    LaunchedEffect(changeButtonVisible) {
-        allowShortcuts(changeButtonVisible)
-        if (!changeButtonVisible) {
+    var changePendingFor: MouseFinderShortcutType? by remember { mutableStateOf(null) }
+    LaunchedEffect(changePendingFor) {
+        allowShortcuts(changePendingFor == null)
+        if (changePendingFor != null) {
             val listener = SettingsKeyListener {
-                onShortcutChanged(it)
-                changeButtonVisible = true
+                val current = changePendingFor
+                if (current != null) {
+                    onShortcutChanged(it, current)
+                }
+                changePendingFor = null
             }
             GlobalScreen.addNativeKeyListener(listener)
             try {
@@ -111,31 +141,26 @@ fun Settings(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically)
     ) {
-        val text = "${NativeKeyEvent.getModifiersText(shortcut.modifiers)}+${
-            NativeKeyEvent.getKeyText(shortcut.keyCode)
-        }"
         Crossfade(
-            targetState = changeButtonVisible,
+            targetState = changePendingFor == null,
             animationSpec = tween()
         ) { isVisible ->
             if (isVisible) {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        text = stringResource(Res.string.current_shortcut),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Button(onClick = { changeButtonVisible = false }) {
-                        Text(stringResource(Res.string.change))
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
+                        horizontalAlignment = Alignment.Start,
+                    ) {
+                        MouseFinderShortcutColumn(
+                            shortcut = shortcutMouseFinder,
+                            type = MouseFinderShortcutType.MouseFinder
+                        ) { changePendingFor = MouseFinderShortcutType.MouseFinder }
+                        MouseFinderShortcutColumn(
+                            shortcut = shortcutMouseJump,
+                            type = MouseFinderShortcutType.MouseJump
+                        ) {
+                            changePendingFor = MouseFinderShortcutType.MouseJump
+                        }
                     }
                 }
             } else {
@@ -149,7 +174,7 @@ fun Settings(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onBackground
                     )
-                    Button(onClick = { changeButtonVisible = true }) {
+                    Button(onClick = { changePendingFor = null }) {
                         Text(stringResource(Res.string.cancel))
                     }
                 }
@@ -157,6 +182,35 @@ fun Settings(
         }
     }
 }
+
+@Composable
+private fun MouseFinderShortcutColumn(
+    shortcut: MouseFinderShortcut, type: MouseFinderShortcutType, onClick: () -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = getTextForMouseFinderShortcutType(type),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground
+        )
+        TextButton(onClick = onClick) {
+            val text = "${NativeKeyEvent.getModifiersText(shortcut.modifiers)}+${
+                NativeKeyEvent.getKeyText(shortcut.keyCode)
+            }"
+            Text(
+                text = text
+            )
+        }
+    }
+}
+
+@Composable
+private fun getTextForMouseFinderShortcutType(type: MouseFinderShortcutType) = stringResource(
+    when (type) {
+        MouseFinderShortcutType.MouseFinder -> Res.string.app_title
+        MouseFinderShortcutType.MouseJump -> Res.string.mouse_jump
+    }
+)
 
 private class SettingsKeyListener(
     private val onShortcutChanged: (MouseFinderShortcut) -> Unit

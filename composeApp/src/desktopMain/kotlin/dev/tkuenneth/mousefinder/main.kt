@@ -26,7 +26,8 @@ fun main() = application {
     var aboutWindowVisible by remember { mutableStateOf(false) }
     var settingsVisible by remember { mutableStateOf(false) }
     var position by remember { mutableStateOf(DpOffset.Zero) }
-    var shortcut by remember { mutableStateOf(getMouseFinderShortcut()) }
+    var shortcutMouseFinder by remember { mutableStateOf(getMouseFinderShortcut()) }
+    var shortcutMouseJump by remember { mutableStateOf(getMouseJumpShortcut()) }
     var allowShortcuts by remember { mutableStateOf(true) }
     var keyListener: GlobalKeyListener? by remember { mutableStateOf(null) }
     val density = LocalDensity.current
@@ -48,8 +49,8 @@ fun main() = application {
 
     DisposableEffect(Unit) {
         keyListener = GlobalKeyListener(
-            initialShortcut = shortcut,
-            onShowWindow = {
+            initialShortcutMouseFinder = shortcutMouseFinder,
+            onMouseFinderActivated = {
                 if (allowShortcuts) {
                     MouseInfo.getPointerInfo().location?.let { currentLocation ->
                         if (mouseSpotVisible) {
@@ -62,41 +63,54 @@ fun main() = application {
                         }
                     }
                 }
+            },
+            initialShortcutMouseJump = shortcutMouseJump,
+            onMouseJumpActivated = {
+                if (allowShortcuts) {
+                    MouseInfo.getPointerInfo().location?.let { currentLocation ->
+                        val nextLocation = findNextScreen(screens, currentLocation)
+                        setMouseLocation(nextLocation, robot)
+                    }
+                }
             }).also { it.register() }
         onDispose {
             keyListener.unregister()
         }
     }
-    MouseFinderTray(
-        settingsClicked = {
-            settingsVisible = true
-            activateMe()
-        },
-        aboutClicked = {
-            aboutWindowVisible = true
-            activateMe()
-        }
-    )
+    MouseFinderTray(settingsClicked = {
+        settingsVisible = true
+        activateMe()
+    }, aboutClicked = {
+        aboutWindowVisible = true
+        activateMe()
+    })
     MouseSpot(
-        visible = mouseSpotVisible,
-        position = position,
-        size = size
+        visible = mouseSpotVisible, position = position, size = size
     ) { mouseSpotVisible = false }
     AboutWindow(visible = aboutWindowVisible) { aboutWindowVisible = false }
     SettingsWindow(
         visible = settingsVisible,
-        shortcut = shortcut,
+        shortcutMouseFinder = shortcutMouseFinder,
+        shortcutMouseJump = shortcutMouseJump,
         allowShortcuts = { allowShortcuts = it },
-        onShortcutChanged = {
-            shortcut = it
-            putMouseFinderShortcut(it)
-            keyListener?.updateShortcut(it)
+        onShortcutChanged = { shortcut, type ->
+            when (type) {
+                MouseFinderShortcutType.MouseFinder -> {
+                    shortcutMouseFinder = shortcut
+                    putMouseFinderShortcut(shortcut)
+                }
+
+                MouseFinderShortcutType.MouseJump -> {
+                    shortcutMouseJump = shortcut
+                    putMouseJumpShortcut(shortcut)
+                }
+            }
+            keyListener?.updateShortcut(shortcut = shortcut, type = type)
         },
         onCloseRequest = {
             settingsVisible = false
             allowShortcuts = true
-        }
-    )
+        })
 }
 
 private fun activateMe() {

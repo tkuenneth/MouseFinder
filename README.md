@@ -4,6 +4,10 @@ The aim of this app is to find your mouse pointer. Upon a key press, it will hig
 
 Another feature is *mouse jump*. If the *Mouse Finder* mouse spot is visible, press the keyboard shortcut again to move the mouse pointer to the center of the next screen. If your setup has only one screen, the mouse pointer will be centered.
 
+There is also a dedicated keyboard shortcut to immediately activate mouse jump. This shortcut can be changed in the settings window, too.
+
+![Mouse Finder Settings](screenshots/settings.png?raw=true "The Mouse Finder Settings")
+
 To get system-wide keyboard shortcuts, *Mouse Finder* uses [JNativeHook](https://github.com/kwhat/jnativehook).
 
 #### Launching Mouse Finder

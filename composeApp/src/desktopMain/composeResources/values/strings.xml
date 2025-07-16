@@ -1,5 +1,7 @@
 <resources>
     <string name="app_title">Mouse Finder</string>
+    <string name="mouse_jump">Mouse Jump</string>
+
     <string name="menu_abut">About %1$s</string>
     <string name="menu_settings">Settings</string>
     <string name="exit">Exit</string>
@@ -7,7 +9,6 @@
     <string name="made_with_love">Made with \u2665 by Thomas K\u00fcnneth</string>
     <string name="homepage">https://github.com/tkuenneth/MouseFinder</string>
 
-    <string name="current_shortcut">Current shortcut</string>
     <string name="change">Change</string>
     <string name="new_shortcut">Press desired key combination</string>
 
