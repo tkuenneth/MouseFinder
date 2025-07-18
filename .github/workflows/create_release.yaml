@@ -21,7 +21,7 @@ jobs:
         run: chmod +x gradlew
       - name: Run packageReleaseDeb with Gradle Wrapper
         run: ./gradlew packageReleaseDeb
-      - run: zip -r ./mousefinder_linux.zip ./composeApp/build/compose/binaries/main-release/deb/*.deb
+      - run: zip -j ./mousefinder_linux.zip ./composeApp/build/compose/binaries/main-release/deb/*.deb
       - name: Upload asset
         uses: actions/upload-artifact@v4
         with:
