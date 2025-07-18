@@ -17,9 +17,15 @@ import java.awt.Rectangle
 import java.awt.Robot
 
 fun main() = application {
-    if (operatingSystem == OperatingSystem.Windows) {
-        System.setProperty("skiko.renderApi", "OPENGL")
-        System.setProperty("jnativehook.lib.path", System.getProperty("java.io.tmpdir"))
+    when (operatingSystem) {
+        OperatingSystem.Windows -> {
+            System.setProperty("skiko.renderApi", "OPENGL")
+            setJnativehookLibPath()
+        }
+        OperatingSystem.Linux -> {
+            setJnativehookLibPath()
+        }
+        else -> { /* do nothing */ }
     }
     val size = 200.dp
     var mouseSpotVisible by remember { mutableStateOf(false) }
@@ -142,4 +148,8 @@ private fun findNextScreen(screens: List<Rectangle>, currentPosition: Point): Po
 
 private fun setMouseLocation(position: Point, robot: Robot) {
     robot.mouseMove(position.x, position.y)
+}
+
+private fun setJnativehookLibPath() {
+    System.setProperty("jnativehook.lib.path", System.getProperty("java.io.tmpdir"))
 }
