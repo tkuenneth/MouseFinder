@@ -5,6 +5,29 @@ on:
       - 'v*'
 
 jobs:
+  create-linux-installer:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project sources
+        uses: actions/checkout@v3
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'corretto'
+          java-version: 21
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Run packageReleaseDeb with Gradle Wrapper
+        run: ./gradlew packageReleaseDeb
+      - run: zip -r ./mousefinder_linux.zip ./composeApp/build/compose/binaries/main-release/deb/*.deb
+      - name: Upload asset
+        uses: actions/upload-artifact@v4
+        with:
+          path: ./mousefinder_linux.zip
+          name: mousefinder_linux.zip
+
   create-windows-installer:
     runs-on: windows-latest
     steps:
@@ -88,10 +111,14 @@ jobs:
 
   create-release:
     runs-on: macos-latest
-    needs: [ create-windows-installer,  create-macos-installer]
+    needs: [ create-linux-installer, create-windows-installer,  create-macos-installer]
     steps:
       - name: Checkout project sources
         uses: actions/checkout@v3
+      - name: Download linux deb
+        uses: actions/download-artifact@v4
+        with:
+          name: mousefinder_linux.zip
       - name: Download dmg
         uses: actions/download-artifact@v4
         with:
@@ -103,5 +130,5 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "mousefinder_windows.zip,mousefinder_macos.zip"
+          artifacts: "mousefinder_linux.zip,mousefinder_windows.zip,mousefinder_macos.zip"
           bodyFile: "whatsnew.md"
